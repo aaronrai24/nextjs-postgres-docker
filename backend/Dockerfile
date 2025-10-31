@@ -9,7 +9,7 @@ COPY package*.json ./
 RUN npm install
 
 # Expose port
-EXPOSE 3000
+EXPOSE 4000
 
 # Run in development mode (with hot reload)
 CMD ["npm", "run", "dev"]

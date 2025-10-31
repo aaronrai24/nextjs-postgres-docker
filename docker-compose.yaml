@@ -1,26 +1,52 @@
 services:
+  backend:
+    build: ./backend
+    ports:
+      - "4000:4000"
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_USER=user
+      - DB_PASSWORD=password
+      - DB_NAME=nextjs
+      - PORT=4000
+
   frontend:
     build: ./frontend
     ports:
       - "3000:3000"
     volumes:
       - ./frontend:/app
+      - /app/node_modules
     depends_on:
-      - db
+      - backend
     environment:
-      - DATABASE_URL=postgres://user:password@db:5432/nextjs
+      - NEXT_PUBLIC_API_URL=http://localhost:4000/api
 
   db:
-    image: postgres
+    image: postgres:16-alpine
     hostname: postgres
     ports:
-      - "5432:5432"
+      - "5433:5432"
     environment:
       POSTGRES_USER: user
       POSTGRES_PASSWORD: password
       POSTGRES_DB: nextjs
-    # volumes:
-      # - ./ddl:/docker-entrypoint-initdb.d
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/init:/docker-entrypoint-initdb.d
+      - ./database/backups:/backups
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d nextjs"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   pgadmin:
     image: dpage/pgadmin4
@@ -31,4 +57,4 @@ services:
       - "8080:80"
 
 volumes:
-  postgres:
+  postgres_data:
